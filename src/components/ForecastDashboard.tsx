@@ -5,77 +5,81 @@ import { StockMetrics } from './StockMetrics';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Loader2, Brain, AlertTriangle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
-// Mock data generator for demonstration
-const generateMockData = (symbol: string) => {
-  const basePrice = 150 + Math.random() * 200;
-  const volatility = 0.02 + Math.random() * 0.03;
-  
-  // Generate historical data (last 30 days)
-  const historicalData = [];
-  for (let i = 29; i >= 0; i--) {
-    const date = new Date();
-    date.setDate(date.getDate() - i);
-    const randomWalk = (Math.random() - 0.5) * volatility * basePrice;
-    const price = Math.max(basePrice + randomWalk, 1);
-    historicalData.push({
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      price: Number(price.toFixed(2)),
+interface StockDataPoint {
+  date: string;
+  price: number;
+  forecast?: boolean;
+}
+
+interface StockData {
+  historical: StockDataPoint[];
+  forecast: StockDataPoint[];
+  metrics: {
+    currentPrice: number;
+    forecastPrice: number;
+    confidence: number;
+    volume: string;
+    marketCap: string;
+    peRatio: number;
+    dayChange: number;
+  };
+}
+
+const fetchStockData = async (symbol: string): Promise<{ chartData: StockDataPoint[]; metrics: any }> => {
+  const { data, error } = await supabase.functions.invoke('fetch-stock-data', {
+    body: { symbol }
+  });
+
+  if (error) {
+    throw new Error(error.message || 'Failed to fetch stock data');
+  }
+
+  // Transform the data to match our component's expected format
+  const chartData = [
+    ...data.historical.map((point: StockDataPoint) => ({
+      ...point,
       forecast: false
-    });
-  }
-
-  // Generate forecast data (next 30 days)
-  const forecastData = [];
-  const lastPrice = historicalData[historicalData.length - 1].price;
-  let currentPrice = lastPrice;
-  
-  for (let i = 1; i <= 30; i++) {
-    const date = new Date();
-    date.setDate(date.getDate() + i);
-    const trend = (Math.random() - 0.4) * volatility * currentPrice; // Slight upward bias
-    currentPrice = Math.max(currentPrice + trend, 1);
-    forecastData.push({
-      date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-      price: Number(currentPrice.toFixed(2)),
+    })),
+    ...data.forecast.map((point: StockDataPoint) => ({
+      ...point,
       forecast: true
-    });
-  }
-
-  const finalForecastPrice = forecastData[29].price;
-  const confidence = 65 + Math.random() * 25; // 65-90% confidence
+    }))
+  ];
 
   return {
-    chartData: [...historicalData, ...forecastData],
-    metrics: {
-      currentPrice: lastPrice,
-      forecastPrice: finalForecastPrice,
-      confidence: Number(confidence.toFixed(0)),
-      volume: Math.floor(5000000 + Math.random() * 50000000),
-      marketCap: `$${(Math.random() * 500 + 100).toFixed(0)}B`,
-      pe: Number((15 + Math.random() * 20).toFixed(1)),
-      dayChange: Number(((Math.random() - 0.5) * 10).toFixed(2)),
-      dayChangePercent: Number(((Math.random() - 0.5) * 5).toFixed(2))
-    }
+    chartData,
+    metrics: data.metrics
   };
 };
 
 export const ForecastDashboard = () => {
-  const [selectedStock, setSelectedStock] = useState('AAPL');
+  const [selectedStock, setSelectedStock] = useState('BTCUSD');
   const [loading, setLoading] = useState(false);
-  const [stockData, setStockData] = useState(generateMockData('AAPL'));
+  const [stockData, setStockData] = useState<{ chartData: StockDataPoint[]; metrics: any } | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (selectedStock) {
       setLoading(true);
-      // Simulate API call delay
-      const timer = setTimeout(() => {
-        setStockData(generateMockData(selectedStock));
-        setLoading(false);
-      }, 1000);
-      return () => clearTimeout(timer);
+      fetchStockData(selectedStock)
+        .then((data) => {
+          setStockData(data);
+          setLoading(false);
+        })
+        .catch((error) => {
+          console.error('Error fetching stock data:', error);
+          toast({
+            title: "Error",
+            description: "Failed to fetch stock data. Please try again.",
+            variant: "destructive",
+          });
+          setLoading(false);
+        });
     }
-  }, [selectedStock]);
+  }, [selectedStock, toast]);
 
   return (
     <div className="min-h-screen bg-background p-4 space-y-6">
@@ -120,7 +124,7 @@ export const ForecastDashboard = () => {
               </div>
             </CardContent>
           </Card>
-        ) : (
+        ) : stockData ? (
           <div className="space-y-6">
             {/* Chart */}
             <StockChart 
@@ -151,6 +155,12 @@ export const ForecastDashboard = () => {
               </CardContent>
             </Card>
           </div>
+        ) : (
+          <Card>
+            <CardContent className="flex items-center justify-center py-12">
+              <p className="text-muted-foreground">No data available. Please try selecting a stock.</p>
+            </CardContent>
+          </Card>
         )}
       </div>
     </div>
