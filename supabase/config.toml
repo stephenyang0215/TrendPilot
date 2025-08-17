@@ -1,1 +1,4 @@
 project_id = "vfzhqwvaehewhbejvkhh"
+
+[functions.fetch-stock-data]
+verify_jwt = false
