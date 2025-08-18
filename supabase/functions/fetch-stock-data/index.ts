@@ -150,7 +150,9 @@ serve(async (req) => {
     console.log(`Parsed ${historical.length} historical points and ${forecastData.length} forecast points`);
     
     // Calculate metrics
+    console.log('Calculating metrics...');
     const metrics = calculateMetrics(historical, forecastData);
+    console.log('Metrics calculated:', metrics);
     
     const response: StockData = {
       historical,
