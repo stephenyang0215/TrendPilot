@@ -65,19 +65,38 @@ async function fetchFromAzureStorage(containerName: string, blobPath: string): P
   return await response.text();
 }
 
-function parseCSV(csvContent: string): StockDataPoint[] {
+function parseCSV(csvContent: string, isHistorical: boolean = true): StockDataPoint[] {
   const lines = csvContent.trim().split('\n');
   const data: StockDataPoint[] = [];
   
-  // Skip header row, assuming first line contains headers
+  if (lines.length < 2) {
+    console.log('CSV content is empty or has no data rows');
+    return data;
+  }
+  
+  // Parse header row to find column indices
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, '').toLowerCase());
+  console.log('CSV headers:', headers);
+  
+  const dateCol = headers.findIndex(h => h === 'ds');
+  const priceCol = isHistorical 
+    ? headers.findIndex(h => h === 'c')
+    : headers.findIndex(h => h === 'pred_price');
+  
+  console.log(`Column indices - Date: ${dateCol}, Price: ${priceCol} (${isHistorical ? 'historical' : 'forecast'})`);
+  
+  if (dateCol === -1 || priceCol === -1) {
+    console.error('Required columns not found. Expected: ds and', isHistorical ? 'c' : 'pred_price');
+    return data;
+  }
+  
+  // Parse data rows
   for (let i = 1; i < lines.length; i++) {
     const columns = lines[i].split(',');
     
-    // Find columns c (price) and ds (datetime)
-    // Assuming ds is first column and c is second column based on typical structure
-    if (columns.length >= 2) {
-      const dateStr = columns[0].trim().replace(/"/g, '');
-      const priceStr = columns[1].trim().replace(/"/g, '');
+    if (columns.length > Math.max(dateCol, priceCol)) {
+      const dateStr = columns[dateCol].trim().replace(/"/g, '');
+      const priceStr = columns[priceCol].trim().replace(/"/g, '');
       
       const price = parseFloat(priceStr);
       if (!isNaN(price) && dateStr) {
@@ -89,6 +108,7 @@ function parseCSV(csvContent: string): StockDataPoint[] {
     }
   }
   
+  console.log(`Parsed ${data.length} data points from ${isHistorical ? 'historical' : 'forecast'} CSV`);
   return data.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 }
 
@@ -141,8 +161,8 @@ serve(async (req) => {
     console.log('Successfully fetched CSV data from Azure');
     
     // Parse CSV data
-    const historical = parseCSV(historicalCSV);
-    const forecastData = parseCSV(forecastCSV).map(point => ({
+    const historical = parseCSV(historicalCSV, true);
+    const forecastData = parseCSV(forecastCSV, false).map(point => ({
       ...point,
       forecast: true
     }));

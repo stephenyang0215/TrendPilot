@@ -12,8 +12,8 @@ interface StockChartProps {
 }
 
 export const StockChart = ({ symbol, data }: StockChartProps) => {
-  const currentPrice = data.find(d => !d.forecast)?.c || 0;
-  const forecastPrice = data.find(d => d.forecast)?.pred_price || 0;
+  const currentPrice = data.find(d => !d.forecast)?.price || 0;
+  const forecastPrice = data.find(d => d.forecast)?.price || 0;
   const priceChange = forecastPrice - currentPrice;
   const priceChangePercent = (priceChange / currentPrice) * 100;
   const isPositive = priceChange >= 0;
