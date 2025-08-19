@@ -29,11 +29,16 @@ interface StockData {
 }
 
 const fetchStockData = async (symbol: string): Promise<{ chartData: StockDataPoint[]; metrics: any }> => {
+  console.log('Fetching stock data for:', symbol);
+  
   const { data, error } = await supabase.functions.invoke('fetch-stock-data', {
     body: { symbol }
   });
 
+  console.log('Edge function response:', { data, error });
+
   if (error) {
+    console.error('Edge function error:', error);
     throw new Error(error.message || 'Failed to fetch stock data');
   }
 
@@ -63,9 +68,11 @@ export const ForecastDashboard = () => {
 
   useEffect(() => {
     if (selectedStock) {
+      console.log('useEffect triggered for stock:', selectedStock);
       setLoading(true);
       fetchStockData(selectedStock)
         .then((data) => {
+          console.log('Successfully fetched data:', data);
           setStockData(data);
           setLoading(false);
         })

@@ -119,16 +119,16 @@ serve(async (req) => {
   }
 
   try {
-    const url = new URL(req.url);
-    const symbol = url.searchParams.get('symbol') || 'BTCUSD';
+    const { symbol } = await req.json();
+    const stockSymbol = symbol || 'BTCUSD';
     
-    console.log(`Fetching data for symbol: ${symbol}`);
+    console.log(`Fetching data for symbol: ${stockSymbol}`);
     
     const containerName = Deno.env.get('AZURE_CONTAINER_NAME') || 'symbols';
     
     // Fetch historical data
-    const historicalPath = `stock/hour/1/data/${symbol.toLowerCase()}_historical.csv`;
-    const forecastPath = `stock/hour/1/forecast/${symbol.toLowerCase()}_forecast.csv`;
+    const historicalPath = `stock/hour/1/data/${stockSymbol.toLowerCase()}_historical.csv`;
+    const forecastPath = `stock/hour/1/forecast/${stockSymbol.toLowerCase()}_forecast.csv`;
     
     console.log(`Fetching historical data from: ${historicalPath}`);
     console.log(`Fetching forecast data from: ${forecastPath}`);
@@ -150,7 +150,9 @@ serve(async (req) => {
     console.log(`Parsed ${historical.length} historical points and ${forecastData.length} forecast points`);
     
     // Calculate metrics
+    console.log('Calculating metrics...');
     const metrics = calculateMetrics(historical, forecastData);
+    console.log('Metrics calculated:', metrics);
     
     const response: StockData = {
       historical,
