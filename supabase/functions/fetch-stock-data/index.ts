@@ -1,4 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { BlobServiceClient } from "npm:@azure/storage-blob@12.17.0";
+import { Buffer } from "node:buffer";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -25,44 +27,67 @@ interface StockData {
   };
 }
 
+async function streamToUint8Array(stream: ReadableStream): Promise<Uint8Array> {
+  const reader = stream.getReader();
+  const chunks: Uint8Array[] = [];
+  
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  
+  // Combine all chunks into a single Uint8Array
+  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Uint8Array(totalLength);
+  let offset = 0;
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+  
+  return result;
+}
+
 async function fetchFromAzureStorage(containerName: string, blobPath: string): Promise<string> {
   const storageAccount = Deno.env.get('AZURE_STORAGE_ACCOUNT');
-  const storageKey = Deno.env.get('AZURE_STORAGE_KEY');
+  const connectionString = Deno.env.get('AZURE_STORAGE_CONNECTION_STRING');
   
-  if (!storageAccount || !storageKey) {
-    throw new Error('Azure storage credentials not configured');
+  if (!storageAccount) {
+    throw new Error('Azure storage account not configured');
   }
-
-  const url = `https://${storageAccount}.blob.core.windows.net/${containerName}/${blobPath}`;
   
-  // Create authorization header for Azure Storage
-  const date = new Date().toUTCString();
-  const stringToSign = `GET\n\n\n\n\n\n\n\n\n\n\n\nx-ms-date:${date}\nx-ms-version:2019-12-12\n/${storageAccount}/${containerName}/${blobPath}`;
-  
-  const key = await crypto.subtle.importKey(
-    'raw',
-    new TextEncoder().encode(atob(storageKey)),
-    { name: 'HMAC', hash: 'SHA-256' },
-    false,
-    ['sign']
-  );
-  
-  const signature = await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(stringToSign));
-  const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
-  
-  const response = await fetch(url, {
-    headers: {
-      'x-ms-date': date,
-      'x-ms-version': '2019-12-12',
-      'Authorization': `SharedKey ${storageAccount}:${signatureBase64}`,
-    },
-  });
-
-  if (!response.ok) {
-    throw new Error(`Failed to fetch from Azure: ${response.status} ${response.statusText}`);
+  if (!connectionString) {
+    throw new Error('Azure storage connection string not configured');
   }
-
-  return await response.text();
+  
+  const blobServiceClient = BlobServiceClient.fromConnectionString(connectionString);
+  
+  // Get container and blob clients
+  const containerClient = blobServiceClient.getContainerClient(containerName);
+  const blobClient = containerClient.getBlobClient(blobPath);
+  
+  try {
+    // Download blob content
+    const downloadResponse = await blobClient.download();
+    console.log('Download Response:', downloadResponse);
+    
+    // Check if readableStreamBody exists
+    if (!downloadResponse.readableStreamBody) {
+      throw new Error('No readable stream body found');
+    }
+    
+    // Convert Node.js stream to Uint8Array
+    const blobContent = await streamToUint8Array(downloadResponse.readableStreamBody);
+    return new TextDecoder().decode(blobContent);
+  } catch (error) {
+    console.error('Error downloading blob:', error);
+    throw error;
+  }
 }
 
 function parseCSV(csvContent: string, isHistorical: boolean = true): StockDataPoint[] {
