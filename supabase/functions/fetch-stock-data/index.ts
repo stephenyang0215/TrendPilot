@@ -27,30 +27,30 @@ interface StockData {
   };
 }
 
-async function streamToUint8Array(stream: ReadableStream): Promise<Uint8Array> {
-  const reader = stream.getReader();
+async function streamToUint8Array(stream: any): Promise<Uint8Array> {
   const chunks: Uint8Array[] = [];
   
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      chunks.push(value);
-    }
-  } finally {
-    reader.releaseLock();
-  }
-  
-  // Combine all chunks into a single Uint8Array
-  const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.length;
-  }
-  
-  return result;
+  return new Promise((resolve, reject) => {
+    stream.on('data', (chunk: any) => {
+      chunks.push(new Uint8Array(chunk));
+    });
+    
+    stream.on('end', () => {
+      // Combine all chunks into a single Uint8Array
+      const totalLength = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+      const result = new Uint8Array(totalLength);
+      let offset = 0;
+      for (const chunk of chunks) {
+        result.set(chunk, offset);
+        offset += chunk.length;
+      }
+      resolve(result);
+    });
+    
+    stream.on('error', (error: any) => {
+      reject(error);
+    });
+  });
 }
 
 async function fetchFromAzureStorage(containerName: string, blobPath: string): Promise<string> {
