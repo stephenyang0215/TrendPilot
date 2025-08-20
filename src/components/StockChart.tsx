@@ -134,7 +134,6 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
                 }}
               />
               <Tooltip content={<CustomTooltip />} />
-              <Legend content={<CustomLegend />} />
               
               {/* Historical Data */}
               <Area
