@@ -98,7 +98,10 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
       <CardContent>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData}>
+            <AreaChart 
+              data={chartData}
+              margin={{ top: 20, right: 30, left: 60, bottom: 20 }}
+            >
               <defs>
                 <linearGradient id="historicalGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--chart-primary))" stopOpacity={0.3}/>
@@ -120,10 +123,15 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
                 fontSize={12}
                 domain={[yMin, yMax]}
                 tickCount={6}
-                tickFormatter={(value) => `$${value.toLocaleString(undefined, { 
-                  minimumFractionDigits: 0, 
-                  maximumFractionDigits: 2 
-                })}`}
+                width={50}
+                tickFormatter={(value) => {
+                  if (value >= 1000000) {
+                    return `$${(value / 1000000).toFixed(1)}M`;
+                  } else if (value >= 1000) {
+                    return `$${(value / 1000).toFixed(1)}K`;
+                  }
+                  return `$${value.toFixed(0)}`;
+                }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
