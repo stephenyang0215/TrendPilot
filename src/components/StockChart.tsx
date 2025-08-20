@@ -28,6 +28,14 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
     ...forecastData.map(d => ({ ...d, historical: null, forecast: d.price }))
   ];
 
+  // Calculate nice Y-axis domain
+  const allPrices = data?.map(d => d.price).filter(Boolean) || [];
+  const minPrice = Math.min(...allPrices);
+  const maxPrice = Math.max(...allPrices);
+  const padding = (maxPrice - minPrice) * 0.1; // 10% padding
+  const yMin = Math.max(0, minPrice - padding);
+  const yMax = maxPrice + padding;
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       const historicalValue = payload.find((p: any) => p.dataKey === 'historical')?.value;
@@ -110,7 +118,12 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
               <YAxis 
                 stroke="hsl(var(--muted-foreground))"
                 fontSize={12}
-                domain={['dataMin - 5', 'dataMax + 5']}
+                domain={[yMin, yMax]}
+                tickCount={6}
+                tickFormatter={(value) => `$${value.toLocaleString(undefined, { 
+                  minimumFractionDigits: 0, 
+                  maximumFractionDigits: 2 
+                })}`}
               />
               <Tooltip content={<CustomTooltip />} />
               <Legend content={<CustomLegend />} />
