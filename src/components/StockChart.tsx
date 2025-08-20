@@ -1,6 +1,6 @@
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart, Legend } from 'recharts';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, TrendingDown } from 'lucide-react';
+import { TrendingUp, TrendingDown, BarChart3, Clock } from 'lucide-react';
 
 interface StockChartProps {
   symbol: string;
@@ -18,15 +18,29 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
   const priceChangePercent = currentPrice > 0 ? (priceChange / currentPrice) * 100 : 0;
   const isPositive = priceChange >= 0;
 
+  // Separate historical and forecast data for better rendering
+  const historicalData = data?.filter(d => !d.forecast) || [];
+  const forecastData = data?.filter(d => d.forecast) || [];
+  
+  // Combine data with null values to create gaps between historical and forecast
+  const chartData = [
+    ...historicalData.map(d => ({ ...d, historical: d.price, forecast: null })),
+    ...forecastData.map(d => ({ ...d, historical: null, forecast: d.price }))
+  ];
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
-      const data = payload[0].payload;
+      const historicalValue = payload.find((p: any) => p.dataKey === 'historical')?.value;
+      const forecastValue = payload.find((p: any) => p.dataKey === 'forecast')?.value;
+      const value = historicalValue || forecastValue;
+      const isForecast = !!forecastValue;
+      
       return (
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="text-sm text-muted-foreground">{label}</p>
           <p className="font-semibold">
-            ${payload[0]?.value?.toFixed?.(2) || '0.00'}
-            {data.forecast && (
+            ${value?.toFixed?.(2) || '0.00'}
+            {isForecast && (
               <span className="text-xs text-warning ml-2">(Forecast)</span>
             )}
           </p>
@@ -34,6 +48,21 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
       );
     }
     return null;
+  };
+
+  const CustomLegend = (props: any) => {
+    return (
+      <div className="flex justify-center items-center gap-6 mt-4 text-sm">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="h-4 w-4 text-chart-primary" />
+          <span className="text-muted-foreground">Historical Data</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock className="h-4 w-4 text-warning" />
+          <span className="text-muted-foreground">Forecast Data</span>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -61,9 +90,9 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
       <CardContent>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data}>
+            <AreaChart data={chartData}>
               <defs>
-                <linearGradient id="priceGradient" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="historicalGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(var(--chart-primary))" stopOpacity={0.3}/>
                   <stop offset="95%" stopColor="hsl(var(--chart-primary))" stopOpacity={0}/>
                 </linearGradient>
@@ -84,26 +113,34 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
                 domain={['dataMin - 5', 'dataMax + 5']}
               />
               <Tooltip content={<CustomTooltip />} />
+              <Legend content={<CustomLegend />} />
+              
+              {/* Historical Data */}
               <Area
                 type="monotone"
-                dataKey="price"
+                dataKey="historical"
                 stroke="hsl(var(--chart-primary))"
                 strokeWidth={2}
-                fill="url(#priceGradient)"
+                fill="url(#historicalGradient)"
                 connectNulls={false}
+                name="Historical"
               />
-              <Line
+              
+              {/* Forecast Data */}
+              <Area
                 type="monotone"
-                dataKey="price"
+                dataKey="forecast"
                 stroke="hsl(var(--warning))"
-                strokeWidth={3}
+                strokeWidth={2}
                 strokeDasharray="5 5"
-                dot={{ fill: 'hsl(var(--warning))', strokeWidth: 2, r: 4 }}
+                fill="url(#forecastGradient)"
                 connectNulls={false}
+                name="Forecast"
               />
             </AreaChart>
           </ResponsiveContainer>
         </div>
+        <CustomLegend />
       </CardContent>
     </Card>
   );
