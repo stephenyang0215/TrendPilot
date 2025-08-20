@@ -12,10 +12,10 @@ interface StockChartProps {
 }
 
 export const StockChart = ({ symbol, data }: StockChartProps) => {
-  const currentPrice = data.find(d => !d.forecast)?.price || 0;
-  const forecastPrice = data.find(d => d.forecast)?.price || 0;
+  const currentPrice = data?.find(d => !d.forecast)?.price || 0;
+  const forecastPrice = data?.find(d => d.forecast)?.price || 0;
   const priceChange = forecastPrice - currentPrice;
-  const priceChangePercent = (priceChange / currentPrice) * 100;
+  const priceChangePercent = currentPrice > 0 ? (priceChange / currentPrice) * 100 : 0;
   const isPositive = priceChange >= 0;
 
   const CustomTooltip = ({ active, payload, label }: any) => {
@@ -25,7 +25,7 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
         <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
           <p className="text-sm text-muted-foreground">{label}</p>
           <p className="font-semibold">
-            ${payload[0].value.toFixed(2)}
+            ${payload[0]?.value?.toFixed?.(2) || '0.00'}
             {data.forecast && (
               <span className="text-xs text-warning ml-2">(Forecast)</span>
             )}
@@ -49,10 +49,10 @@ export const StockChart = ({ symbol, data }: StockChartProps) => {
             )}
             <div className="text-right">
               <div className="text-lg font-bold">
-                ${forecastPrice.toFixed(2)}
+                ${forecastPrice?.toFixed?.(2) || '0.00'}
               </div>
               <div className={`text-sm ${isPositive ? 'text-success' : 'text-destructive'}`}>
-                {isPositive ? '+' : ''}${priceChange.toFixed(2)} ({priceChangePercent.toFixed(2)}%)
+                {isPositive ? '+' : ''}${priceChange?.toFixed?.(2) || '0.00'} ({priceChangePercent?.toFixed?.(2) || '0.00'}%)
               </div>
             </div>
           </div>

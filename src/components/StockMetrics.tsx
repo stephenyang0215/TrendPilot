@@ -8,30 +8,29 @@ interface StockMetricsProps {
     currentPrice: number;
     forecastPrice: number;
     confidence: number;
-    volume: number;
+    volume: string | number;
     marketCap: string;
-    pe: number;
+    peRatio?: number;
     dayChange: number;
-    dayChangePercent: number;
   };
 }
 
 export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
   const {
-    currentPrice,
-    forecastPrice,
-    confidence,
+    currentPrice = 0,
+    forecastPrice = 0,
+    confidence = 0,
     volume,
-    marketCap,
-    pe,
-    dayChange,
-    dayChangePercent
+    marketCap = "N/A",
+    peRatio,
+    dayChange = 0
   } = metrics;
 
   const isPositive = dayChange >= 0;
   const forecastChange = forecastPrice - currentPrice;
-  const forecastChangePercent = (forecastChange / currentPrice) * 100;
+  const forecastChangePercent = currentPrice > 0 ? (forecastChange / currentPrice) * 100 : 0;
   const isForecastPositive = forecastChange >= 0;
+  const dayChangePercent = currentPrice > 0 ? (dayChange / currentPrice) * 100 : 0;
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 80) return 'bg-success text-success-foreground';
@@ -47,10 +46,10 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
           <DollarSign className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${currentPrice.toFixed(2)}</div>
+          <div className="text-2xl font-bold">${currentPrice?.toFixed?.(2) || '0.00'}</div>
           <div className={`flex items-center text-xs ${isPositive ? 'text-success' : 'text-destructive'}`}>
             {isPositive ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-            {isPositive ? '+' : ''}${dayChange.toFixed(2)} ({dayChangePercent.toFixed(2)}%)
+            {isPositive ? '+' : ''}${dayChange?.toFixed?.(2) || '0.00'} ({dayChangePercent?.toFixed?.(2) || '0.00'}%)
           </div>
         </CardContent>
       </Card>
@@ -61,10 +60,10 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
           <Target className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">${forecastPrice.toFixed(2)}</div>
+          <div className="text-2xl font-bold">${forecastPrice?.toFixed?.(2) || '0.00'}</div>
           <div className={`flex items-center text-xs ${isForecastPositive ? 'text-success' : 'text-destructive'}`}>
             {isForecastPositive ? <TrendingUp className="h-3 w-3 mr-1" /> : <TrendingDown className="h-3 w-3 mr-1" />}
-            {isForecastPositive ? '+' : ''}${forecastChange.toFixed(2)} ({forecastChangePercent.toFixed(2)}%)
+            {isForecastPositive ? '+' : ''}${forecastChange?.toFixed?.(2) || '0.00'} ({forecastChangePercent?.toFixed?.(2) || '0.00'}%)
           </div>
         </CardContent>
       </Card>
@@ -88,7 +87,9 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{(volume / 1000000).toFixed(1)}M</div>
+          <div className="text-2xl font-bold">
+            {typeof volume === 'string' ? volume : (volume / 1000000)?.toFixed?.(1) + 'M' || 'N/A'}
+          </div>
           <p className="text-xs text-muted-foreground">
             24h trading volume
           </p>
@@ -114,7 +115,7 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
           <BarChart3 className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{pe.toFixed(1)}</div>
+          <div className="text-2xl font-bold">{peRatio?.toFixed?.(1) || 'N/A'}</div>
           <p className="text-xs text-muted-foreground">
             Price-to-earnings ratio
           </p>
