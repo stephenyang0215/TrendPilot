@@ -9,12 +9,12 @@ interface StockSearchProps {
 }
 
 const POPULAR_STOCKS = [
-  { symbol: 'AAPL', name: 'Apple Inc.' },
-  { symbol: 'GOOGL', name: 'Alphabet Inc.' },
-  { symbol: 'MSFT', name: 'Microsoft Corp.' },
-  { symbol: 'TSLA', name: 'Tesla Inc.' },
-  { symbol: 'NVDA', name: 'NVIDIA Corp.' },
-  { symbol: 'AMZN', name: 'Amazon.com Inc.' },
+  { symbol: 'BTCUSD', name: 'Bitcoin USD cryptocurrency' },
+  { symbol: 'SPY', name: 'SPDR S&P 500 ETF Trust' },
+  { symbol: 'QQQ', name: 'Invesco QQQ Trust, Series 1' },
+  { symbol: 'GME', name: 'GameStop Corp' },
+  { symbol: 'CHWY', name: 'Chewy Inc' },
+  { symbol: 'SMCI', name: 'Super Micro Computer Inc' },
 ];
 
 export const StockSearch = ({ onStockSelect, selectedStock }: StockSearchProps) => {
