@@ -43,8 +43,13 @@ const fetchStockData = async (symbol: string): Promise<{ chartData: StockDataPoi
   }
 
   // Transform the data to match our component's expected format
+  // Limit historical data to show only recent points (60% of time window)
+  const totalForecastPoints = data.forecast.length;
+  const historicalPointsToShow = Math.ceil((totalForecastPoints * 60) / 40); // 60% historical, 40% forecast
+  const limitedHistorical = data.historical.slice(-historicalPointsToShow);
+  
   const chartData = [
-    ...data.historical.map((point: StockDataPoint) => ({
+    ...limitedHistorical.map((point: StockDataPoint) => ({
       ...point,
       forecast: false
     })),
