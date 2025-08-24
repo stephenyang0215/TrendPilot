@@ -7,8 +7,8 @@ interface StockMetricsProps {
   metrics: {
     currentPrice: number;
     forecastPrice: number;
+    firstPrice: number;
     confidence: number;
-    dayChange: number;
   };
 }
 
@@ -16,15 +16,17 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
   const {
     currentPrice = 0,
     forecastPrice = 0,
-    confidence = 0,
-    dayChange = 0
+    firstPrice = 0,
+    confidence = 0
   } = metrics;
 
-  const isPositive = dayChange >= 0;
+  
   const forecastChange = forecastPrice - currentPrice;
   const forecastChangePercent = currentPrice > 0 ? (forecastChange / currentPrice) * 100 : 0;
   const isForecastPositive = forecastChange >= 0;
-  const dayChangePercent = currentPrice > 0 ? (dayChange / currentPrice) * 100 : 0;
+  const dayChange = (currentPrice - firstPrice)
+  const isPositive = dayChange >= 0;
+  const dayChangePercent = firstPrice > 0 ? (dayChange / firstPrice) * 100 : 0;
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 80) return 'bg-success text-success-foreground';
