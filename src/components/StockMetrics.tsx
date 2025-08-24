@@ -56,7 +56,7 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
 
       <Card className="bg-gradient-to-br from-card to-secondary/20">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">30-Day Forecast</CardTitle>
+          <CardTitle className="text-sm font-medium">1-Day Forecast</CardTitle>
           <Target className="h-4 w-4 text-muted-foreground" />
         </CardHeader>
         <CardContent>
