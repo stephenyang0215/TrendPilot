@@ -8,9 +8,6 @@ interface StockMetricsProps {
     currentPrice: number;
     forecastPrice: number;
     confidence: number;
-    volume: string | number;
-    marketCap: string;
-    peRatio?: number;
     dayChange: number;
   };
 }
@@ -20,9 +17,6 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
     currentPrice = 0,
     forecastPrice = 0,
     confidence = 0,
-    volume,
-    marketCap = "N/A",
-    peRatio,
     dayChange = 0
   } = metrics;
 
@@ -39,7 +33,7 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card className="bg-gradient-to-br from-card to-secondary/20">
         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
           <CardTitle className="text-sm font-medium">Current Price</CardTitle>
@@ -81,46 +75,6 @@ export const StockMetrics = ({ symbol, metrics }: StockMetricsProps) => {
         </CardContent>
       </Card>
 
-      <Card className="bg-gradient-to-br from-card to-secondary/20">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Volume</CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">
-            {typeof volume === 'string' ? volume : (volume / 1000000)?.toFixed?.(1) + 'M' || 'N/A'}
-          </div>
-          <p className="text-xs text-muted-foreground">
-            24h trading volume
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-gradient-to-br from-card to-secondary/20">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">Market Cap</CardTitle>
-          <DollarSign className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{marketCap}</div>
-          <p className="text-xs text-muted-foreground">
-            Total market value
-          </p>
-        </CardContent>
-      </Card>
-
-      <Card className="bg-gradient-to-br from-card to-secondary/20">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <CardTitle className="text-sm font-medium">P/E Ratio</CardTitle>
-          <BarChart3 className="h-4 w-4 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="text-2xl font-bold">{peRatio?.toFixed?.(1) || 'N/A'}</div>
-          <p className="text-xs text-muted-foreground">
-            Price-to-earnings ratio
-          </p>
-        </CardContent>
-      </Card>
     </div>
   );
 };
