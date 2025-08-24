@@ -140,7 +140,7 @@ function parseCSV(csvContent: string, isHistorical: boolean = true): StockDataPo
 function calculateMetrics(historical: StockDataPoint[], forecast: StockDataPoint[]) {
   const currentPrice = historical[historical.length - 1]?.price || 0;
   const forecastPrice = forecast[forecast.length - 1]?.price || 0;
-  const previousPrice = historical[historical.length - 2]?.price || currentPrice;
+  const previousPrice = historical[historical.length - 24]?.price || currentPrice;
   
   const dayChange = ((currentPrice - previousPrice) / previousPrice) * 100;
   const priceRange = Math.max(...historical.map(d => d.price)) - Math.min(...historical.map(d => d.price));
